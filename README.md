@@ -51,13 +51,13 @@ labels and all images are classified into one of 7 classes:
 
 Evaluation metric for this task is the multi-class accuracy (MCA) i.e. the average of precision for all classes. 
 
-<center>
+
 
 ![](/img/mca.png)
 
-</center>
 
-where $P_i$ is the precision of class $i$ and $n$ is the number of classes
+
+where P<sub>i</sub> is the precision of class i and n is the number of classes
 
 ## Architecture 
 Since this is a problem of image classification, a convolutional neural network (CNN) architecture would be most suitable. I found a good implementation of a bunch of CNN architectures in Tensorflow, in this GitHub repo called [Tensornets](https://github.com/taehoonlee/tensornets)
@@ -71,13 +71,14 @@ Since the pretrained model I used had an input size of 224x224 and the images in
 ## Improving Performance
 As shown in the figure below, approximately 70% of the images belong to only one class (Melanocytic nevus). 
 
-<center>
-
-![](/img/Task3-DiseaseTypeFrequency.png)
 
 ##### Disease Type Frequency
 
-</center>
+![](/img/Task3-DiseaseTypeFrequency.png)
+
+
+
+
 
 Hence, it is trivial to achieve around 70% accuracy by simply predicting all images to be of that class. That is obviously incorrect. In order to improve performance, I tried several techniques such as data augmentation, oversampling low-frequency classes, weighted loss etc.
 
@@ -90,29 +91,27 @@ normalization could help speed up training by scaling the output of the fully co
 ### Data Augmentation - Mirroring
 There is still a large difference between the validation and training MCA. Training the model on a larger dataset could help bridge this gap. We can double the dataset by simply taking mirror images of the existing dataset while keeping the labels constant. Training the model on the dataset with original imges and their horizontal mirror images increased the validation MCA to 76.27% while the training MCA was up to 92.85%
 
-<center>
+##### Horizontally Flipped Images
 
 ![](/img/Task3-Imgs-Mirror.png)
 
-##### Horizontally Flipped Images
 
-</center>
 
 ### Weighted Loss
 The model still predicts the dominating class more often than it should while ignoring lesser occuring classes. One way to fix this is to penalize the model for predicting the dominating class. This can be done by multiplying the loss function by the frequency of classes. Thus, a new weighted loss function can be used to train the model.
 
 The weights for the loss function are calculated as shown below.
 
-<div>$$w_i = \frac{1}{m}\sum_{j=1}^{m}Y_{ij}$$</div>
+![](/img/w.png)
 
-where $Y\_{ij}$ is the value of class $i$ in example $j$ and $m$ is the number of examples in the original training set. Since $Y\_j$ is a one-hot vector, the value of $Y\_{ij}$ is either 0 or 1. The mean of this along the number of examples gives the frequency of class $i$ in the dataset. The calculated weights are shown in the table below
+where Y<sub>ij</sub> is the value of class i in example j and m is the number of examples in the original training set. Since Y<sub>j</sub> is a one-hot vector, the value of Y<sub>ij</sub> is either 0 or 1. The mean of this along the number of examples gives the frequency of class i in the dataset. The calculated weights are shown in the table below
 
 
-<center>
+
 
 ##### Table: Weights for Loss Function By Class
 
-$i$ | Class | Weight ($w_i$)
+i | Class | Weight (w_i)
 :---|:---|---:
 0 |Melanoma | 0.111
 1 |Melanocytic nevus | 0.669
@@ -122,35 +121,32 @@ $i$ | Class | Weight ($w_i$)
 5 |Dermatofibroma | 0.011
 6 |Vascular lesion | 0.014
 
-</center>
+
 
 Now, the new value of loss function can be written as shown in the equation below.
 
+![](/img/J.png)
 
-<div>
-$$J = (\sum_{j=1}^{b}w_iY_{ij}).(\frac{1}{b}\sum_{j=1}^{b}\sum_{i=0}^{n-1}Y_{ij}\log\hat{Y}_{ij})$$
-</div>
-
-where $w\_i$ is the weight as calculated above, $b$ is the size of the batch used to run backpropagation (using the Adam optimizer) and $\hat{Y}\_{ij}$ is the softmax probability of class $i$ predicted for example $j$ by the model. As a result of this multiplication, the classes occuring more frequently are penalized with a higher loss function whereas those that occur less frequently are rewarded with a lower loss function. Training the model with the weighted loss function got a validation MCA of 75.73% and training MCA of 95.25%.
+where w<sub>i</sub> is the weight as calculated above, b is the size of the batch used to run backpropagation (using the Adam optimizer) and &Ycirc;<sub>ij</sub> is the softmax probability of class i predicted for example j by the model. As a result of this multiplication, the classes occuring more frequently are penalized with a higher loss function whereas those that occur less frequently are rewarded with a lower loss function. Training the model with the weighted loss function got a validation MCA of 75.73% and training MCA of 95.25%.
 
 ### Oversampling
 
 The presence of classes Dermatofibroma and Vascular lesion (class 5 and 6) is very low in the dataset (approx 1%). We can increase their occurence by taking random crops of the central part of the image so that the lesion still remains in the image. I took 4 random crops of images belonging to these classes and also their horizontal mirror images while keeping the labels constant. Also I took vertical mirror images of images belonging to the Actinic keratosis (class 3) which also occurs less frequently. All these new images were then added to the dataset alongwith the original labels. From this, 90% of the data was randomly selected for training. The validation MCA shot up to 87.47% as a result while training MCA was 98.08%.
 
-<center>
-
-![](/img/Task3-Imgs-DF-Crops.png)
 
 ##### Random Crops
 
-</center>
+![](/img/Task3-Imgs-DF-Crops.png)
+
+
+
 
 ## Results
 
 The results achieved from training using the techniques listed above are
 shown in the table below.
 
-<center>
+
 
 ##### Table: Effect On Model Performance
 
@@ -162,7 +158,7 @@ Data Augmentation - Mirroring | 92.85% | 76.27%
 Weighted Loss | 95.25% | 75.73%
 Oversampling | 98.08% | 87.47%
 
-</center>
+
 
 ## Conclusion and Discussion
 
