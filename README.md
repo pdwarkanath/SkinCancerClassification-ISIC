@@ -2,15 +2,17 @@
 
 Code for my replication of one of the best performing solutions to the ISIC challenge. Challenge Leaderboard: https://challenge2018.isic-archive.com/leaderboards/
 
-
 ## Summary
 
 Recently, I worked on a project with [Dr. Qian](http://www.ece.tamu.edu/~xqian/) to classify images of skin lesions into the type of skin cancer they exhibited. The data was provided by the International Skin Imaging Collaboration (ISIC) from the [HAM10000 dataset](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DBW86T). The [ISIC Challenge 2018](https://challenge2018.isic-archive.com/) consisted of 3 tasks. This post is aimed at tackling Task 3 - Disease Classification from images of skin lesions.
 
 I assume if you're reading this, you know what a Convolutional Neural Network (CNN) is. There are some CNN architectures that have shown to historically perform well on image classification tasks. It would make sense to try those out first. I started by using a simple [VGG19](https://arxiv.org/abs/1409.1556) architecture pretrained on ImageNet and then tried the [ResNet50](https://arxiv.org/abs/1512.03385), replacing the last 2 layers with new fully connected layers. ResNet50 performed much better, so I used it with further tuning to achieve results on par with the best on the [leaderboard](https://challenge2018.isic-archive.com/leaderboards/).
 
-You can find the code used for the post below in my [github repo for the project](https://github.com/pdwarkanath/ISIC-Challenge)
+You can find the code used for the post below in my 3 notebooks:
 
+1. [Loading Data](Task3-Load_Imgs.ipynb)
+2. [Training](Task3-Training.ipynb)
+3. [Prediction](Task3-Prediction.ipynb)
 
 ## Introduction
 
@@ -24,15 +26,16 @@ The HAM1000 dataset is an aggregation of a large amount of publicly accessible d
 
 I worked on Task 3 i.e. classification of images into one of 7 possible classes and will detail the process in this post.
 
-
 ## Dataset
 
 There are 10,015 images in the labeled training dataset. Some sample images from the dataset and their labels are shown below.
 
 <center>
 ![](/img/Task3-Imgs.png)
+
 ##### Lesion Images
 </center>
+
 The labels are stored in a CSV file in the form of stacked transposes of one-hot vectors. i.e. each example in the dataset is represented by a row of length 7 with only the class to which the exmple belogns being 1 and the other elements in the row being 0. There are no missing
 labels and all images are classified into one of 7 classes: 
 
@@ -45,7 +48,12 @@ labels and all images are classified into one of 7 classes:
 * Vascular lesion
 
 Evaluation metric for this task is the multi-class accuracy (MCA) i.e. the average of precision for all classes. 
-<div>$$MCA = \frac{1}{n}\sum_{i=0}^{n-1}{P_i}$$</div>
+
+<center>
+
+![](/img/mca.png)
+
+</center>
 
 where $P_i$ is the precision of class $i$ and $n$ is the number of classes
 
@@ -62,8 +70,11 @@ Since the pretrained model I used had an input size of 224x224 and the images in
 As shown in the figure below, approximately 70% of the images belong to only one class (Melanocytic nevus). 
 
 <center>
+
 ![](/img/Task3-DiseaseTypeFrequency.png)
+
 ##### Disease Type Frequency
+
 </center>
 
 Hence, it is trivial to achieve around 70% accuracy by simply predicting all images to be of that class. That is obviously incorrect. In order to improve performance, I tried several techniques such as data augmentation, oversampling low-frequency classes, weighted loss etc.
@@ -78,8 +89,11 @@ normalization could help speed up training by scaling the output of the fully co
 There is still a large difference between the validation and training MCA. Training the model on a larger dataset could help bridge this gap. We can double the dataset by simply taking mirror images of the existing dataset while keeping the labels constant. Training the model on the dataset with original imges and their horizontal mirror images increased the validation MCA to 76.27% while the training MCA was up to 92.85%
 
 <center>
+
 ![](/img/Task3-Imgs-Mirror.png)
+
 ##### Horizontally Flipped Images
+
 </center>
 
 ### Weighted Loss
@@ -93,6 +107,7 @@ where $Y\_{ij}$ is the value of class $i$ in example $j$ and $m$ is the number o
 
 
 <center>
+
 ##### Table: Weights for Loss Function By Class
 
 $i$ | Class | Weight ($w_i$)
@@ -117,14 +132,19 @@ $$J = (\sum_{j=1}^{b}w_iY_{ij}).(\frac{1}{b}\sum_{j=1}^{b}\sum_{i=0}^{n-1}Y_{ij}
 where $w\_i$ is the weight as calculated above, $b$ is the size of the batch used to run backpropagation (using the Adam optimizer) and $\hat{Y}\_{ij}$ is the softmax probability of class $i$ predicted for example $j$ by the model. As a result of this multiplication, the classes occuring more frequently are penalized with a higher loss function whereas those that occur less frequently are rewarded with a lower loss function. Training the model with the weighted loss function got a validation MCA of 75.73% and training MCA of 95.25%.
 
 ### Oversampling
+
 The presence of classes Dermatofibroma and Vascular lesion (class 5 and 6) is very low in the dataset (approx 1%). We can increase their occurence by taking random crops of the central part of the image so that the lesion still remains in the image. I took 4 random crops of images belonging to these classes and also their horizontal mirror images while keeping the labels constant. Also I took vertical mirror images of images belonging to the Actinic keratosis (class 3) which also occurs less frequently. All these new images were then added to the dataset alongwith the original labels. From this, 90% of the data was randomly selected for training. The validation MCA shot up to 87.47% as a result while training MCA was 98.08%.
 
 <center>
+
 ![](/img/Task3-Imgs-DF-Crops.png)
+
 ##### Random Crops
+
 </center>
 
 ## Results
+
 The results achieved from training using the techniques listed above are
 shown in the table below.
 
@@ -143,7 +163,9 @@ Oversampling | 98.08% | 87.47%
 </center>
 
 ## Conclusion and Discussion
+
 The ResNet50 architecture with data augmentation is able to perform much better than the baseline but there is still a difference between the training and validation metrics. The best training MCA is over 98% but the best validation MCA is about 87.5%. Since the training and  validation sets are randomly selected from the same dataset, the chances of data mismatch are minimal. The training-validation gap may be converged further by training on a larger dataset. Also, there is a possibility of illumination affecting the database which can be corrected using color constancy on the entire dataset.
 
 ## Acknowledgements
+
 I would like to thank the Texas A&M High Performance Research Computing (HPRC) for providing the necessary computational resources. Also, I would like to thank Taehoon Lee who trained several models on the ImageNet dataset and provided an open source implementation in Tensorflow.
