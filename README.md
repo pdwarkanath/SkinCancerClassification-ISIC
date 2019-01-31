@@ -30,11 +30,13 @@ I worked on Task 3 i.e. classification of images into one of 7 possible classes 
 
 There are 10,015 images in the labeled training dataset. Some sample images from the dataset and their labels are shown below.
 
-<center>
+<div style={margin:auto;}>
+
 ![](/img/Task3-Imgs.png)
 
 ##### Lesion Images
-</center>
+
+</div>
 
 The labels are stored in a CSV file in the form of stacked transposes of one-hot vectors. i.e. each example in the dataset is represented by a row of length 7 with only the class to which the exmple belogns being 1 and the other elements in the row being 0. There are no missing
 labels and all images are classified into one of 7 classes: 
